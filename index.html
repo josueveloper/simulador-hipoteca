@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador Depa Viande</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: calculadora de dos columnas (datos a la izquierda, resultados a la derecha) que se apila en celular */
+:root{
+  --bg:#f3f5f2; --panel:#ffffff; --fg:#17201b; --muted:#5b6760; --line:#d9dfda;
+  --accent:#1f6b4f; --accent-soft:#e2efe8; --rent:#b5761d; --rent-soft:#f6ecdc;
+  --bad:#b23b2e; --good:#1f6b4f; --inf:#3d6fa8; --inf-soft:#dbe6f2;
+  --f-display:"Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111613; --panel:#1a211d; --fg:#e7ece8; --muted:#9aa8a0; --line:#2c3630;
+  --accent:#5cc49a; --accent-soft:#1c3329; --rent:#e3a54c; --rent-soft:#352a19;
+  --bad:#ef7d6e; --good:#5cc49a; --inf:#7fa9de; --inf-soft:#1f2c3b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111613; --panel:#1a211d; --fg:#e7ece8; --muted:#9aa8a0; --line:#2c3630;
+  --accent:#5cc49a; --accent-soft:#1c3329; --rent:#e3a54c; --rent-soft:#352a19;
+  --bad:#ef7d6e; --good:#5cc49a; --inf:#7fa9de; --inf-soft:#1f2c3b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 40px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header h1{font-family:var(--f-display);font-weight:700;font-size:clamp(24px,4vw,32px);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
+header p{margin:6px 0 0;color:var(--muted);max-width:65ch}
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}}
+.inputs{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:18px}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+legend{font-family:var(--f-display);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;padding:0}
+.field{display:grid;grid-template-columns:minmax(0,1fr) 128px;align-items:center;gap:10px}
+.field label{font-size:14px}
+.field small{display:block;color:var(--muted);font-size:12px;line-height:1.3}
+.inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:var(--bg);overflow:hidden}
+.inp span{padding:0 8px;color:var(--muted);font-size:13px}
+.inp input{flex:1;min-width:0;width:100%;border:0;background:transparent;color:var(--fg);font:500 15px var(--f-body);padding:8px 8px;text-align:right;font-variant-numeric:tabular-nums}
+.inp:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input:focus{outline:none}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--fg);font:500 13px var(--f-body);padding:9px 6px;cursor:pointer;line-height:1.2}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--panel)}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.seg-label{font-size:14px;margin-bottom:6px}
+.seg3{grid-template-columns:1fr 1fr 1fr}
+.hint{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:6px}
+.compare tbody tr{cursor:pointer}
+.compare tbody tr:hover td{background:var(--bg)}
+.compare tbody tr.sel td{background:var(--accent-soft);font-weight:600}
+.compare tbody tr:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.compare td.best{color:var(--good)}
+.warn{color:var(--bad);font-weight:500}
+.cofi-box{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--inf);padding-left:10px;margin-left:2px}
+body:not(.cofi) .only-cofi{display:none}
+body:not(.cofi):not(.apoyo) .cofi-box{display:none}
+.card .sub{margin:0 0 6px;color:var(--muted);font-size:13px;max-width:70ch}
+.compare .tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-left:6px}
+.reset{align-self:flex-start;border:1px solid var(--line);background:transparent;color:var(--muted);font:500 13px var(--f-body);border-radius:8px;padding:7px 12px;cursor:pointer}
+.reset:hover{color:var(--fg);border-color:var(--muted)}
+.reset:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.results{display:flex;flex-direction:column;gap:20px;min-width:0}
+.verdict{border-radius:12px;padding:18px 18px;background:var(--accent-soft);display:flex;flex-direction:column;gap:4px}
+.verdict.no{background:var(--rent-soft)}
+.verdict .k{font-size:13px;color:var(--muted)}
+.verdict .big{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,6vw,44px);line-height:1.05;color:var(--accent);font-variant-numeric:tabular-nums}
+.verdict.no .big{color:var(--rent)}
+.verdict p{margin:4px 0 0;max-width:65ch}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+@media (max-width:620px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:last-child:nth-child(odd){grid-column:span 2}}
+.kpi{background:var(--panel);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi .k{font-size:12px;color:var(--muted);line-height:1.3}
+.kpi .v{font-family:var(--f-display);font-weight:600;font-size:20px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpi .s{font-size:12px;color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.card h2{font-family:var(--f-display);font-weight:600;font-size:17px;margin:0 0 4px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:6px 0 4px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.readout{font-size:13px;min-height:20px;font-variant-numeric:tabular-nums;margin-bottom:6px}
+.readout b{font-weight:600}
+#chart{width:100%;display:block;touch-action:pan-y}
+#chart text{font-family:var(--f-body);font-size:11px;fill:var(--muted)}
+.tablebox{overflow-x:auto;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums;min-width:520px}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted);font-size:12px}
+tr.be td{background:var(--accent-soft);font-weight:600}
+td.neg{color:var(--good)}
+.notes{font-size:13px;color:var(--muted);max-width:75ch;display:flex;flex-direction:column;gap:6px}
+.notes p{margin:0}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Simulador Depa Viande</h1>
+    <p>Cambia cualquier valor y ve cuánto tarda la renta en cubrir la mensualidad. Los valores iniciales son el ejemplo que platicamos: Ópalo de 51.48 m² en Tlaquepaque.</p>
+  </header>
+
+  <div class="grid">
+    <form class="inputs" id="form" novalidate>
+      <fieldset>
+        <legend>Compra</legend>
+        <div class="field"><label for="precio">Precio del depa</label><div class="inp"><span>$</span><input id="precio" type="number" inputmode="numeric" step="10000" min="0"></div></div>
+        <div class="field"><label for="eng">Enganche<small id="eng-hint"></small></label><div class="inp"><input id="eng" type="number" inputmode="decimal" step="1" min="0" max="100"><span>%</span></div></div>
+        <div class="field"><label for="gastos">Gastos de escrituración<small>Notario, impuesto, avalúo</small></label><div class="inp"><input id="gastos" type="number" inputmode="decimal" step="0.5" min="0"><span>%</span></div></div>
+      </fieldset>
+      <fieldset>
+        <legend>Crédito</legend>
+        <div>
+          <div class="seg-label">Financiamiento</div>
+          <div class="seg seg3" role="group" aria-label="Tipo de financiamiento">
+            <button type="button" id="fin-banco" data-fin="banco">Solo banco</button>
+            <button type="button" id="fin-apoyo" data-fin="apoyo">Apoyo Infonavit<br><small>banco + aportación</small></button>
+            <button type="button" id="fin-cofi" data-fin="cofinavit">Cofinavit<br><small>Infonavit + banco</small></button>
+          </div>
+        </div>
+        <div class="field"><label for="tasa">Tasa del banco<small>Ejemplo; usa tu cotización</small></label><div class="inp"><input id="tasa" type="number" inputmode="decimal" step="0.1" min="0"><span>%</span></div></div>
+        <div class="field"><label for="plazo">Plazo del banco</label><div class="inp"><input id="plazo" type="number" inputmode="numeric" step="1" min="1" max="40"><span>años</span></div></div>
+        <div class="cofi-box" id="cofi-fields">
+          <div class="field"><label for="subcuenta">Subcuenta de vivienda<small id="sub-hint">Tu ahorro en Infonavit; se aplica a la compra</small></label><div class="inp"><span>$</span><input id="subcuenta" type="number" inputmode="numeric" step="5000" min="0"></div></div>
+          <div class="field only-cofi"><label for="infMonto">Crédito Infonavit<small>El de tu precalificación</small></label><div class="inp"><span>$</span><input id="infMonto" type="number" inputmode="numeric" step="10000" min="0"></div></div>
+          <div class="field only-cofi"><label for="infTasa">Tasa Infonavit<small>Fija; 3.69% a 10.45% según tu salario</small></label><div class="inp"><input id="infTasa" type="number" inputmode="decimal" step="0.01" min="0"><span>%</span></div></div>
+          <div class="field only-cofi"><label for="infPlazo">Plazo Infonavit</label><div class="inp"><input id="infPlazo" type="number" inputmode="numeric" step="1" min="1" max="30"><span>años</span></div></div>
+          <div class="field"><label for="aport">Aportación de tu patrón<small>5% de tu salario; va a capital</small></label><div class="inp"><span>$</span><input id="aport" type="number" inputmode="numeric" step="100" min="0"></div></div>
+          <div>
+            <div class="seg-label">En el crédito del banco, la aportación</div>
+            <div class="seg" role="group" aria-label="Cómo se aplica la aportación del patrón">
+              <button type="button" id="aport-camino" data-aportmodo="camino">Sigue tu camino<br><small>igual que tus abonos</small></button>
+              <button type="button" id="aport-plazo" data-aportmodo="plazo">Siempre reduce plazo<br><small>como en HSBC</small></button>
+            </div>
+            <small class="hint" id="aport-hint"></small>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Renta</legend>
+        <div class="field"><label for="renta">Renta mensual</label><div class="inp"><span>$</span><input id="renta" type="number" inputmode="numeric" step="100" min="0"></div></div>
+        <div class="field"><label for="aumento">Aumento de renta al año</label><div class="inp"><input id="aumento" type="number" inputmode="decimal" step="0.5"><span>%</span></div></div>
+        <div class="field"><label for="mant">Mantenimiento al mes</label><div class="inp"><span>$</span><input id="mant" type="number" inputmode="numeric" step="50" min="0"></div></div>
+        <div class="field"><label for="vacios">Meses vacío al año</label><div class="inp"><input id="vacios" type="number" inputmode="decimal" step="0.5" min="0" max="12"><span>meses</span></div></div>
+      </fieldset>
+      <fieldset>
+        <legend>Lo que pagas</legend>
+        <div class="field"><label for="pago">Pagas cada mes<small id="pago-hint">Se cubre la mensualidad y el resto va a capital</small></label><div class="inp"><span>$</span><input id="pago" type="number" inputmode="numeric" step="500" min="0"></div></div>
+        <div>
+          <div class="seg-label">La renta</div>
+          <div class="seg" role="group" aria-label="Uso de la renta">
+            <button type="button" id="renta-no" data-conrenta="no">Me la quedo<br><small>no va al crédito</small></button>
+            <button type="button" id="renta-si" data-conrenta="si">También va al crédito<br><small>se suma a tu pago</small></button>
+          </div>
+        </div>
+        <div class="field"><label for="anual">Extra una vez al año<small>Aguinaldo, bonos</small></label><div class="inp"><span>$</span><input id="anual" type="number" inputmode="numeric" step="1000" min="0"></div></div>
+        <div>
+          <div class="seg-label">Los abonos sirven para</div>
+          <div class="seg seg3" role="group" aria-label="Efecto de los abonos">
+            <button type="button" id="modo-mens" data-modo="mensualidad">Bajar mensualidad<br><small>banco</small></button>
+            <button type="button" id="modo-hib" data-modo="hibrido">Híbrido<br><small>banco</small></button>
+            <button type="button" id="modo-plazo" data-modo="plazo">Bajar plazo<br><small>Infonavit</small></button>
+          </div>
+          <small class="hint" id="modo-hint"></small>
+        </div>
+        <div>
+          <div class="seg-label">Se paga sola cuando la mensualidad iguala</div>
+          <div class="seg" role="group" aria-label="Meta">
+            <button type="button" id="meta-neta" data-meta="neta">Renta neta<br><small>tras gastos</small></button>
+            <button type="button" id="meta-bruta" data-meta="bruta">Renta completa<br><small>sin descontar</small></button>
+          </div>
+        </div>
+      </fieldset>
+      <button type="button" class="reset" id="reset">Volver al ejemplo</button>
+    </form>
+
+    <div class="results">
+      <div class="verdict" id="verdict">
+        <span class="k">Se paga sola en</span>
+        <span class="big" id="v-big">—</span>
+        <p id="v-text"></p>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><span class="k">Mensualidad inicial</span><span class="v" id="k-pay">—</span><span class="s" id="k-pay-s"></span></div>
+        <div class="kpi"><span class="k">Pones de tu bolsa al inicio</span><span class="v" id="k-start">—</span><span class="s">al mes, con abonos</span></div>
+        <div class="kpi"><span class="k">Total de tu bolsa hasta pagarse sola</span><span class="v" id="k-pocket">—</span><span class="s" id="k-pocket-s">sin contar enganche</span></div>
+        <div class="kpi"><span class="k">Total de tu bolsa hasta liquidar la deuda</span><span class="v" id="k-pocket-all">—</span><span class="s" id="k-pocket-all-s">sin contar enganche</span></div>
+        <div class="kpi"><span class="k">Efectivo para firmar</span><span class="v" id="k-cash">—</span><span class="s" id="k-cash-s"></span></div>
+        <div class="kpi"><span class="k">Préstamo</span><span class="v" id="k-loan">—</span><span class="s" id="k-loan-s"></span></div>
+        <div class="kpi"><span class="k">Terminas de pagar en</span><span class="v" id="k-end">—</span><span class="s" id="k-end-s"></span></div>
+        <div class="kpi"><span class="k">Intereses totales</span><span class="v" id="k-int">—</span><span class="s" id="k-int-s"></span></div>
+        <div class="kpi"><span class="k">Rendimiento bruto de renta</span><span class="v" id="k-yield">—</span><span class="s">renta anual ÷ precio</span></div>
+      </div>
+
+      <div class="card">
+        <h2>Los tres caminos con tus mismos abonos</h2>
+        <div class="tablebox">
+          <table class="compare">
+            <thead><tr><th>Camino</th><th>Se paga sola en</th><th>Terminas de pagar en</th><th>Intereses totales</th><th>De tu bolsa hasta pagarse sola</th><th>Total de tu bolsa hasta liquidar<br><small>con enganche y gastos</small></th></tr></thead>
+            <tbody id="cmp"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Solo banco, Apoyo Infonavit o Cofinavit</h2>
+        <p class="sub" id="fin-sub"></p>
+        <div class="tablebox">
+          <table class="compare">
+            <thead><tr><th>Financiamiento</th><th>Mensualidad inicial</th><th>Se paga sola en</th><th>Terminas de pagar en</th><th>Intereses totales</th><th>De tu bolsa hasta pagarse sola</th><th>Total de tu bolsa hasta liquidar<br><small>con enganche y gastos</small></th></tr></thead>
+            <tbody id="cmp-fin"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Mensualidad contra renta</h2>
+        <div class="legend"><span><i style="background:var(--accent)"></i>Mensualidad total</span><span class="only-cofi"><i style="background:var(--inf)"></i>Parte Infonavit</span><span><i style="background:var(--rent)"></i><span id="lg-rent">Renta neta</span></span></div>
+        <div class="readout" id="readout"></div>
+        <svg id="chart" role="img" aria-label="Mensualidad y renta a lo largo del crédito"></svg>
+      </div>
+
+      <div class="card">
+        <h2>Año por año</h2>
+        <div class="tablebox">
+          <table>
+            <thead><tr><th>Año</th><th>Mensualidad</th><th class="only-cofi">Infonavit</th><th class="only-cofi">Banco</th><th>A capital / mes</th><th id="th-rent">Renta neta</th><th>De tu bolsa / mes</th><th>Saldo al cierre</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="notes">
+        <p><b>Renta neta</b> = renta × (meses rentado ÷ 12) − mantenimiento. Cada mes se cubre primero la mensualidad con lo que pagas al banco; lo que sobra va a capital. "De tu bolsa" es lo que pagas al banco menos la renta neta que recibes; un número negativo es dinero que te sobra.</p>
+        <p>Si pagas siempre la misma cantidad, la deuda baja igual en los tres caminos; lo que cambia es la mensualidad mínima que te exige el banco, que es tu colchón si un mes no puedes pagar de más.</p>
+        <p>No incluye ISR por rentar, predial, seguro ni reparaciones. La tasa es solo un ejemplo: pide cotizaciones reales.</p>
+        <p>"Bajar mensualidad" funciona con bancos que recalculan el pago al abonar a capital. Con Infonavit los abonos solo acortan el plazo.</p>
+        <p>"Híbrido": abonas para bajar la mensualidad hasta que la renta la cubre; desde ese mes congelas el pago en ese nivel y los abonos siguientes acortan el plazo. Pídele al banco que aplique cada abono como quieras.</p>
+        <p><b>Cofinavit</b>: tu subcuenta paga primero el enganche y, si sobra, baja el préstamo. El crédito Infonavit cubre otra parte del precio y el banco presta el resto. Revisa con el banco que acepte la subcuenta como parte del enganche mínimo. La parte Infonavit se descuenta de tu nómina con pago fijo; la aportación de tu patrón (5% del salario) la abona primero y, al liquidarla, pasa a la parte del banco. Lo que pagas de más va primero al crédito con tasa más alta. Los tres caminos aplican a la parte del banco. "Solo banco" no usa tu subcuenta ni la aportación de tu patrón.</p>
+        <p><b>Apoyo Infonavit</b>: todo el préstamo es del banco. Tu subcuenta no se usa para la compra: se queda como garantía y, si pierdes tu empleo, el banco cobra de ahí las mensualidades hasta agotarla. La aportación de tu patrón se abona al capital del crédito bancario y aquí se aplica según el camino que elijas. Se aportan cada bimestre; el simulador la reparte por mes. Algunas fuentes mencionan un tope al valor de la vivienda para este esquema; confírmalo con el banco.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var DEFAULTS={precio:1800000,eng:10,gastos:6,tasa:10.5,plazo:30,renta:9900,aumento:4,mant:650,vacios:1,pago:20000,anual:0,conRenta:'no',modo:'mensualidad',meta:'neta',fin:'banco',subcuenta:100000,infMonto:500000,infTasa:9.6,infPlazo:30,aport:2000,aportModo:'camino'};
+  var HINTS={
+    mensualidad:'Cada abono baja el pago; el plazo se mantiene.',
+    hibrido:'Baja el pago hasta que la renta lo cubre; después tus abonos acortan el plazo.',
+    plazo:'El pago se queda fijo; cada abono acorta el plazo.'
+  };
+  var MODE_NAMES={mensualidad:'Bajar mensualidad',hibrido:'Híbrido',plazo:'Bajar plazo'};
+  var KEYS=['precio','eng','gastos','tasa','plazo','renta','aumento','mant','vacios','pago','anual','subcuenta','infMonto','infTasa','infPlazo','aport'];
+  var FIN_NAMES={banco:'Solo banco',apoyo:'Apoyo Infonavit',cofinavit:'Cofinavit'};
+  var state=Object.assign({},DEFAULTS);
+  try{var saved=JSON.parse(localStorage.getItem('simViande2')||'null');if(saved&&typeof saved==='object'){Object.assign(state,saved);}}catch(e){}
+
+  var money=new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
+  function $(id){return document.getElementById(id);}
+  function fm(v){return money.format(Math.round(v)).replace('MXN','').trim();}
+  function yrs(m){var y=m/12;return (Math.round(y*10)/10).toLocaleString('es-MX')+' años';}
+
+  function fillInputs(){KEYS.forEach(function(k){$(k).value=state[k];});syncSeg();}
+  function syncSeg(){
+    $('modo-mens').setAttribute('aria-pressed',state.modo==='mensualidad');
+    $('modo-hib').setAttribute('aria-pressed',state.modo==='hibrido');
+    $('modo-plazo').setAttribute('aria-pressed',state.modo==='plazo');
+    var cofi=state.fin==='cofinavit', apoyo=state.fin==='apoyo';
+    $('modo-hint').textContent=(HINTS[state.modo]||'')+(cofi?' Aplica a la parte del banco; la de Infonavit siempre acorta plazo.':apoyo?' La aportación de tu patrón también se aplica así.':'');
+    $('fin-banco').setAttribute('aria-pressed',state.fin==='banco');
+    $('fin-apoyo').setAttribute('aria-pressed',apoyo);
+    $('fin-cofi').setAttribute('aria-pressed',cofi);
+    document.body.classList.toggle('cofi',cofi);
+    document.body.classList.toggle('apoyo',apoyo);
+    $('sub-hint').textContent=apoyo?'Se queda como garantía si pierdes tu empleo':'Cubre primero tu enganche; lo que sobre baja el préstamo';
+    $('eng-hint').textContent=cofi?'Total; tu subcuenta pone una parte':'';
+    $('aport-camino').setAttribute('aria-pressed',state.aportModo!=='plazo');
+    $('aport-plazo').setAttribute('aria-pressed',state.aportModo==='plazo');
+    $('aport-hint').textContent=cofi
+      ?'Con Cofinavit solo cuenta cuando ya liquidaste la parte Infonavit y la aportación pasa al banco.'
+      :'Pregúntale a tu banco cómo la aplica; si solo reduce plazo, la mensualidad baja más lento.';
+    $('pago-hint').textContent=cofi?'Cubre Infonavit (nómina) y banco; el resto va a capital':'Se cubre la mensualidad y el resto va a capital';
+    $('renta-no').setAttribute('aria-pressed',state.conRenta!=='si');
+    $('renta-si').setAttribute('aria-pressed',state.conRenta==='si');
+    $('meta-neta').setAttribute('aria-pressed',state.meta==='neta');
+    $('meta-bruta').setAttribute('aria-pressed',state.meta==='bruta');
+  }
+  function save(){try{localStorage.setItem('simViande2',JSON.stringify(state));}catch(e){}}
+
+  function pmtR(B,r,n){if(B<=0)return 0;if(n<=0)return B;return r===0?B/n:B*r/(1-Math.pow(1+r,-n));}
+  function simulate(p){
+    var cofi=p.fin==='cofinavit', apoyo=p.fin==='apoyo';
+    var engTotal=Math.max(0,p.precio*p.eng/100);
+    var needed=Math.max(0,p.precio-engTotal);
+    var subAll=cofi?Math.max(0,p.subcuenta):0;
+    var subToEng=Math.min(subAll,engTotal);            // la subcuenta cubre primero el enganche
+    var sub=Math.min(subAll-subToEng,needed);          // lo que sobra baja el préstamo
+    var cashEng=engTotal-subToEng;
+    var Li0=cofi?Math.min(Math.max(0,p.infMonto),needed-sub):0;
+    var Lb0=Math.max(0,needed-sub-Li0);
+    var rb=p.tasa/100/12, Nb=Math.max(1,Math.round(p.plazo*12));
+    var ri=p.infTasa/100/12, Ni=Math.max(1,Math.round(p.infPlazo*12));
+    var bankFixed=pmtR(Lb0,rb,Nb), infFixed=pmtR(Li0,ri,Ni);
+    var Bb=Lb0, Bi=Li0, months=[], be=null, pocket=0, pocketAll=0, interest=0, frozen=null, short=0, shortMax=0;
+    var bankPay=bankFixed; // mensualidad vigente del banco
+    var maxM=Math.max(Nb,cofi?Ni:0);
+    var bankFirst=!cofi||p.tasa>=p.infTasa;
+    // tipo: 'mens' = el abono baja la mensualidad (mismo plazo restante); 'plazo' = la mensualidad no cambia
+    function applyTo(amount,order,bankType){
+      var used=0;
+      order.forEach(function(k){
+        if(amount<=0)return;
+        if(k==='b'&&Bb>0){
+          var before=Bb, a=Math.min(amount,Bb);
+          Bb-=a; amount-=a; used+=a;
+          if(bankType==='mens') bankPay*=Bb/before;
+        }
+        if(k==='i'&&Bi>0){var c=Math.min(amount,Bi);Bi-=c;amount-=c;used+=c;}
+      });
+      return used;
+    }
+    for(var m=0;m<maxM && (Bb>0.5||Bi>0.5);m++){
+      var y=Math.floor(m/12);
+      var rent=p.renta*Math.pow(1+p.aumento/100,y);
+      var net=rent*(12-Math.min(12,p.vacios))/12-p.mant;
+      var target=p.meta==='neta'?net:rent;
+      // Infonavit: pago fijo
+      var intI=Bi*ri, payI=Bi>0.5?Math.min(infFixed,Bi+intI):0;
+      // Banco: según el camino
+      var intB=Bb*rb, payB=0;
+      if(Bb>0.5) payB=Math.min(bankPay,Bb+intB);
+      var pay=payI+payB;
+      if(be===null && pay<=target+0.5){be=m; frozen=pay;}
+      Bi=Math.max(0,Bi+intI-payI); Bb=Math.max(0,Bb+intB-payB);
+      interest+=intI+intB;
+      var sent=p.pago+(p.conRenta==='si'?Math.max(0,net):0);
+      if(sent<pay-0.5){short++; shortMax=Math.max(shortMax,pay-sent);}
+      var userExtra=Math.max(0,sent-pay)+(((m+1)%12===0)?p.anual:0);
+      var userType=p.modo==='plazo'?'plazo':(p.modo==='hibrido'&&frozen!==null?'plazo':'mens');
+      var empType=p.aportModo==='plazo'?'plazo':userType;
+      var emp=(cofi||apoyo)?Math.max(0,p.aport):0;
+      var empUsed=applyTo(emp,['i','b'],empType);
+      var userUsed=applyTo(userExtra,bankFirst?['b','i']:['i','b'],userType);
+      if(be===null) pocket+=pay+userUsed-net;
+      pocketAll+=pay+userUsed-net;
+      months.push({m:m,y:y,pay:pay,payI:payI,payB:payB,net:net,rent:rent,target:target,extra:userUsed+empUsed,userExtra:userUsed,emp:empUsed,B:Bb+Bi,Bb:Bb,Bi:Bi});
+    }
+    if(be===null && months.length<maxM) be=months.length; // se liquidó antes
+    return {cofi:cofi,apoyo:apoyo,guarantee:apoyo?Math.max(0,p.subcuenta):0,loan:Lb0+Li0,Lb0:Lb0,Li0:Li0,sub:sub,subToEng:subToEng,cashEng:cashEng,engTotal:engTotal,needed:needed,months:months,be:be,pocket:pocket,pocketAll:pocketAll,interest:interest,N:maxM,short:short,shortMax:shortMax};
+  }
+
+  var lastSim=null;
+  function render(){
+    var p=state, s=simulate(p); lastSim=s;
+    var m0=s.months[0]||{pay:0,payI:0,payB:0,net:0,rent:0,extra:0,userExtra:0};
+    var cash=s.cashEng+p.precio*p.gastos/100;
+    var startPocket=m0.pay+m0.userExtra-m0.net;
+
+    var v=$('verdict');
+    if(s.be!==null){
+      v.classList.remove('no');
+      $('v-big').textContent=s.be===0?'Desde el primer mes':yrs(s.be);
+      var mb=s.months[Math.min(s.be,s.months.length-1)];
+      $('v-text').textContent=s.be===0
+        ?'La renta ya cubre la mensualidad desde el inicio.'
+        :'Para entonces la mensualidad baja a '+fm(mb?mb.pay:0)+' y la renta'+(p.meta==='neta'?' neta':'')+' es de '+fm(mb?mb.target:0)+'. Hasta ese punto pones en total '+fm(s.pocket)+' de tu bolsa.';
+    }else{
+      v.classList.add('no');
+      $('v-big').textContent='No llega en el plazo';
+      $('v-text').textContent='Con estos valores la renta nunca alcanza a la mensualidad. Prueba con un pago mensual mayor, más enganche o una tasa menor.';
+    }
+    if(s.short>0){
+      var w=document.createElement('span');
+      w.className='warn';
+      w.textContent=' Ojo: tu pago de '+fm(p.pago)+(p.conRenta==='si'?' más la renta':'')+' no alcanza la mensualidad de '+fm(m0.pay)+', así que no queda nada para capital. El cálculo asume que pagas la mensualidad completa.';
+      $('v-text').appendChild(w);
+    }
+
+    $('k-pay').textContent=fm(m0.pay);
+    $('k-pay-s').textContent=s.cofi?('Infonavit '+fm(m0.payI)+' + banco '+fm(m0.payB)):('a '+p.plazo+' años');
+    $('k-start').textContent=fm(startPocket);
+    $('k-pocket').textContent=fm(s.pocket);
+    $('k-pocket-s').textContent='sin enganche; con enganche y gastos: '+fm(s.pocket+cash);
+    $('k-pocket-all').textContent=fm(s.pocketAll);
+    $('k-pocket-all-s').textContent='sin enganche; con enganche y gastos: '+fm(s.pocketAll+cash);
+    $('k-cash').textContent=fm(cash);
+    $('k-cash-s').textContent=s.subToEng>0
+      ?('enganche '+fm(s.cashEng)+' + gastos; tu subcuenta pone '+fm(s.subToEng))
+      :'enganche + gastos';
+    $('k-loan').textContent=fm(s.loan);
+    $('k-loan-s').textContent=s.cofi?('Infonavit '+fm(s.Li0)+' + banco '+fm(s.Lb0)+(s.sub>0?'; sobrante de subcuenta '+fm(s.sub):'')):s.apoyo?('banco; subcuenta '+fm(s.guarantee)+' como garantía'):'banco';
+    var endM=s.months.length;
+    $('k-end').textContent=yrs(endM);
+    $('k-end-s').textContent=endM<s.N?(yrs(s.N-endM)+' antes'):'plazo completo';
+    $('k-int').textContent=fm(s.interest);
+    $('k-int-s').textContent=s.loan>0?(Math.round(s.interest/s.loan*100)+'% del préstamo'):'';
+    $('k-yield').textContent=p.precio>0?((p.renta*12/p.precio*100).toFixed(1)+'%'):'—';
+
+    var rentLabel=p.meta==='neta'?'Renta neta':'Renta completa';
+    $('lg-rent').textContent=rentLabel; $('th-rent').textContent=rentLabel;
+
+    renderTable(s);
+    renderCompare();
+    renderFinCompare();
+    drawChart(s);
+  }
+
+  function renderFinCompare(){
+    var tb=$('cmp-fin'); tb.textContent='';
+    var fins=['banco','apoyo','cofinavit'];
+    var res=fins.map(function(f){return simulate(Object.assign({},state,{fin:f}));});
+    $('fin-sub').textContent='Con el camino "'+MODE_NAMES[state.modo]+'" y '+fm(state.pago)+' al mes. Apoyo Infonavit y Cofinavit usan los datos de Infonavit que pongas al activarlos.';
+    function beM(r){return r.be===null?Infinity:r.be;}
+    var bestBe=Math.min.apply(null,res.map(beM));
+    var bestEnd=Math.min.apply(null,res.map(function(r){return r.months.length;}));
+    var bestInt=Math.min.apply(null,res.map(function(r){return r.interest;}));
+    var bestPay=Math.min.apply(null,res.map(function(r){return r.months[0]?r.months[0].pay:0;}));
+    fins.forEach(function(f,ix){
+      var r=res[ix], tr=document.createElement('tr'), p0=r.months[0]?r.months[0].pay:0;
+      tr.tabIndex=0; tr.setAttribute('role','button');
+      tr.setAttribute('aria-label','Usar '+FIN_NAMES[f]);
+      if(f===state.fin) tr.className='sel';
+      var c0=document.createElement('td'); c0.textContent=FIN_NAMES[f];
+      if(f===state.fin){var tg=document.createElement('span');tg.className='tag';tg.textContent='en uso';c0.appendChild(tg);}
+      tr.appendChild(c0);
+      [
+        [fm(p0), Math.round(p0)===Math.round(bestPay)],
+        [r.be===null?'No llega':(r.be===0?'Mes 1':yrs(r.be)), beM(r)===bestBe&&r.be!==null],
+        [yrs(r.months.length), r.months.length===bestEnd],
+        [fm(r.interest), Math.round(r.interest)===Math.round(bestInt)],
+        [fm(r.pocket), false],
+        [fm(r.pocketAll+r.cashEng+state.precio*state.gastos/100), false]
+      ].forEach(function(c){var td=document.createElement('td');td.textContent=c[0];if(c[1])td.className='best';tr.appendChild(td);});
+      function pick(){state.fin=f;syncSeg();save();hoverM=null;render();}
+      tr.addEventListener('click',pick);
+      tr.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}});
+      tb.appendChild(tr);
+    });
+  }
+
+  function renderCompare(){
+    var tb=$('cmp'); tb.textContent='';
+    var modes=['mensualidad','hibrido','plazo'];
+    var res=modes.map(function(md){return simulate(Object.assign({},state,{modo:md}));});
+    function beM(r){return r.be===null?Infinity:r.be;}
+    var bestBe=Math.min.apply(null,res.map(beM));
+    var bestEnd=Math.min.apply(null,res.map(function(r){return r.months.length;}));
+    var bestInt=Math.min.apply(null,res.map(function(r){return r.interest;}));
+    modes.forEach(function(md,ix){
+      var r=res[ix], tr=document.createElement('tr');
+      tr.tabIndex=0; tr.setAttribute('role','button');
+      tr.setAttribute('aria-label','Usar '+MODE_NAMES[md]);
+      if(md===state.modo) tr.className='sel';
+      var c0=document.createElement('td'); c0.textContent=MODE_NAMES[md];
+      if(md===state.modo){var tg=document.createElement('span');tg.className='tag';tg.textContent='en uso';c0.appendChild(tg);}
+      tr.appendChild(c0);
+      var cells=[
+        [r.be===null?'No llega':(r.be===0?'Mes 1':yrs(r.be)), beM(r)===bestBe&&r.be!==null],
+        [yrs(r.months.length), r.months.length===bestEnd],
+        [fm(r.interest), Math.round(r.interest)===Math.round(bestInt)],
+        [fm(r.pocket), false],
+        [fm(r.pocketAll+r.cashEng+state.precio*state.gastos/100), false]
+      ];
+      cells.forEach(function(c){var td=document.createElement('td');td.textContent=c[0];if(c[1])td.className='best';tr.appendChild(td);});
+      function pick(){state.modo=md;syncSeg();save();hoverM=null;render();}
+      tr.addEventListener('click',pick);
+      tr.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}});
+      tb.appendChild(tr);
+    });
+  }
+
+  function renderTable(s){
+    var tb=$('tbody'); tb.textContent='';
+    var byYear={};
+    s.months.forEach(function(r){(byYear[r.y]=byYear[r.y]||[]).push(r);});
+    var beYear=s.be!==null&&s.be<s.months.length?s.months[s.be].y:null;
+    Object.keys(byYear).forEach(function(k){
+      var rows=byYear[k], n=rows.length;
+      var pay=rows.reduce(function(a,r){return a+r.pay;},0)/n;
+      var tgt=rows.reduce(function(a,r){return a+r.target;},0)/n;
+      var pocket=rows.reduce(function(a,r){return a+r.pay+r.userExtra-r.net;},0)/n;
+      var ext=rows.reduce(function(a,r){return a+r.extra;},0)/n;
+      var pI=rows.reduce(function(a,r){return a+r.payI;},0)/n;
+      var pB=rows.reduce(function(a,r){return a+r.payB;},0)/n;
+      var tr=document.createElement('tr');
+      if(+k===beYear) tr.className='be';
+      [String(+k+1),fm(pay),fm(pI),fm(pB),fm(ext),fm(tgt),fm(pocket),fm(rows[n-1].B)].forEach(function(t,ix){
+        var td=document.createElement('td'); td.textContent=t;
+        if(ix===2||ix===3) td.className='only-cofi';
+        if(ix===6&&pocket<0) td.className='neg';
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+  }
+
+  var hoverM=null;
+  function drawChart(s){
+    var svg=$('chart'), W=Math.max(300,svg.clientWidth||600), H=Math.round(Math.min(300,Math.max(200,W*0.45)));
+    svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('height',H);
+    var ml=58, mr=12, mt=10, mb=26, iw=W-ml-mr, ih=H-mt-mb;
+    var ms=s.months; if(!ms.length){svg.innerHTML='';return;}
+    var maxY=0; ms.forEach(function(r){maxY=Math.max(maxY,r.pay,r.target);});
+    maxY=niceMax(maxY*1.08);
+    var total=ms.length;
+    function x(m){return ml+(total<=1?0:m/(total-1))*iw;}
+    function y(v){return mt+ih-(Math.max(0,v)/maxY)*ih;}
+    var out='';
+    for(var g=0;g<=4;g++){var gv=maxY*g/4, gy=y(gv);
+      out+='<line x1="'+ml+'" x2="'+(W-mr)+'" y1="'+gy+'" y2="'+gy+'" stroke="var(--line)" stroke-width="1"/>';
+      out+='<text x="'+(ml-6)+'" y="'+(gy+4)+'" text-anchor="end">'+fm(gv)+'</text>';}
+    var years=Math.ceil(total/12), step=years>20?5:years>10?2:1;
+    for(var yy=0;yy<=years;yy+=step){var mm=Math.min(total-1,yy*12);
+      out+='<text x="'+x(mm)+'" y="'+(H-8)+'" text-anchor="middle">'+(yy===0?'Año 0':yy)+'</text>';}
+    function path(key){return ms.map(function(r,ix){return (ix?'L':'M')+x(ix).toFixed(1)+' '+y(r[key]).toFixed(1);}).join(' ');}
+    var area=path('pay')+' L'+x(total-1).toFixed(1)+' '+(mt+ih)+' L'+ml+' '+(mt+ih)+' Z';
+    out+='<path d="'+area+'" fill="var(--accent-soft)" stroke="none" opacity=".7"/>';
+    if(s.cofi){
+      var areaI=path('payI')+' L'+x(total-1).toFixed(1)+' '+(mt+ih)+' L'+ml+' '+(mt+ih)+' Z';
+      out+='<path d="'+areaI+'" fill="var(--inf-soft)" stroke="none"/>';
+      out+='<path d="'+path('payI')+'" fill="none" stroke="var(--inf)" stroke-width="1.5" stroke-linejoin="round"/>';
+    }
+    out+='<path d="'+path('target')+'" fill="none" stroke="var(--rent)" stroke-width="2.25" stroke-linejoin="round"/>';
+    out+='<path d="'+path('pay')+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>';
+    if(s.be!==null && s.be<total){
+      var bx=x(s.be);
+      out+='<line x1="'+bx+'" x2="'+bx+'" y1="'+mt+'" y2="'+(mt+ih)+'" stroke="var(--fg)" stroke-width="1" stroke-dasharray="3 3"/>';
+      out+='<circle cx="'+bx+'" cy="'+y(ms[s.be].pay)+'" r="4.5" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>';
+      var lx=bx+(bx>W-130?-6:6);
+      out+='<text x="'+lx+'" y="'+(mt+12)+'" text-anchor="'+(bx>W-130?'end':'start')+'" style="fill:var(--fg);font-weight:600">Se paga sola</text>';
+    }
+    var hm=hoverM!==null?Math.min(hoverM,total-1):null;
+    if(hm!==null){
+      out+='<line x1="'+x(hm)+'" x2="'+x(hm)+'" y1="'+mt+'" y2="'+(mt+ih)+'" stroke="var(--muted)" stroke-width="1"/>';
+      out+='<circle cx="'+x(hm)+'" cy="'+y(ms[hm].pay)+'" r="3.5" fill="var(--accent)"/>';
+      out+='<circle cx="'+x(hm)+'" cy="'+y(ms[hm].target)+'" r="3.5" fill="var(--rent)"/>';
+    }
+    svg.innerHTML=out;
+    svg._geom={ml:ml,iw:iw,total:total,W:W};
+    var r=ms[hm!==null?hm:(s.be!==null&&s.be<total?s.be:0)];
+    $('readout').innerHTML='';
+    var lab=document.createElement('span');
+    lab.textContent='Año '+(r.y+1)+', mes '+((r.m%12)+1)+': ';
+    var b1=document.createElement('b'); b1.textContent='mensualidad '+fm(r.pay)+(s.cofi?' (Infonavit '+fm(r.payI)+' + banco '+fm(r.payB)+')':'');
+    var b2=document.createElement('b'); b2.textContent=(state.meta==='neta'?'renta neta ':'renta ')+fm(r.target);
+    $('readout').append(lab,b1,' · ',b2);
+  }
+  function niceMax(v){if(v<=0)return 1000;var p=Math.pow(10,Math.floor(Math.log10(v))),n=v/p;var s=n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10;return s*p;}
+
+  var svg=$('chart');
+  function pointer(ev){
+    var g=svg._geom; if(!g)return;
+    var rect=svg.getBoundingClientRect(); var px=(ev.clientX-rect.left)*(g.W/rect.width);
+    var t=(px-g.ml)/g.iw; t=Math.max(0,Math.min(1,t));
+    hoverM=Math.round(t*(g.total-1)); drawChart(lastSim);
+  }
+  svg.addEventListener('pointermove',pointer);
+  svg.addEventListener('pointerdown',pointer);
+  svg.addEventListener('pointerleave',function(){hoverM=null;drawChart(lastSim);});
+
+  KEYS.forEach(function(k){
+    $(k).addEventListener('input',function(){
+      var v=parseFloat(this.value); state[k]=isNaN(v)?0:v; hoverM=null; save(); render();
+    });
+  });
+  document.querySelectorAll('[data-modo]').forEach(function(b){b.addEventListener('click',function(){state.modo=b.dataset.modo;syncSeg();save();render();});});
+  document.querySelectorAll('[data-aportmodo]').forEach(function(b){b.addEventListener('click',function(){state.aportModo=b.dataset.aportmodo;syncSeg();save();hoverM=null;render();});});
+  document.querySelectorAll('[data-fin]').forEach(function(b){b.addEventListener('click',function(){state.fin=b.dataset.fin;syncSeg();save();hoverM=null;render();});});
+  document.querySelectorAll('[data-conrenta]').forEach(function(b){b.addEventListener('click',function(){state.conRenta=b.dataset.conrenta;syncSeg();save();hoverM=null;render();});});
+  document.querySelectorAll('[data-meta]').forEach(function(b){b.addEventListener('click',function(){state.meta=b.dataset.meta;syncSeg();save();render();});});
+  $('reset').addEventListener('click',function(){state=Object.assign({},DEFAULTS);fillInputs();save();hoverM=null;render();});
+  $('form').addEventListener('submit',function(e){e.preventDefault();});
+  var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){drawChart(lastSim);},120);});
+
+  fillInputs(); render();
+})();
+</script>
+
+</body>
+</html>
