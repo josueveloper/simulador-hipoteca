@@ -268,7 +268,13 @@ td.neg{color:var(--good)}
   var money=new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
   function $(id){return document.getElementById(id);}
   function fm(v){return money.format(Math.round(v)).replace('MXN','').trim();}
-  function yrs(m){var y=m/12;return (Math.round(y*10)/10).toLocaleString('es-MX')+' años';}
+  function yrs(m){
+    m=Math.max(0,Math.round(m));
+    var y=Math.floor(m/12), r=m%12, parts=[];
+    if(y) parts.push(y+(y===1?' año':' años'));
+    if(r) parts.push(r+(r===1?' mes':' meses'));
+    return parts.length?parts.join(' y '):'0 meses';
+  }
 
   function fillInputs(){KEYS.forEach(function(k){$(k).value=state[k];});syncSeg();}
   function syncSeg(){
