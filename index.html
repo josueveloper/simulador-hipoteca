@@ -1,14 +1,13 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-MX">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Simulador de crédito hipotecario</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Figtree:wght@400;500;600&display=swap">
+<link rel="preload" href="fonts/figtree-latin.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+@font-face{font-family:"Familjen Grotesk";font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/familjen-grotesk-latin.woff2) format("woff2")}
+@font-face{font-family:"Figtree";font-style:normal;font-weight:300 900;font-display:swap;src:url(fonts/figtree-latin.woff2) format("woff2")}
 /* Layout: calculadora de dos columnas (datos a la izquierda, resultados a la derecha) que se apila en celular */
 :root{
   --bg:#f3f5f2; --panel:#ffffff; --fg:#17201b; --muted:#5b6760; --line:#d9dfda;
@@ -96,6 +95,9 @@ tr.be td{background:var(--accent-soft);font-weight:600}
 td.neg{color:var(--good)}
 .notes{font-size:13px;color:var(--muted);max-width:75ch;display:flex;flex-direction:column;gap:6px}
 .notes p{margin:0}
+.noscript{margin:0;padding:12px 14px;border-radius:8px;background:var(--rent-soft);font-weight:500}
+.foot{border-top:1px solid var(--line);padding-top:14px;font-size:13px;color:var(--muted)}
+.foot p{margin:0}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 
@@ -107,11 +109,13 @@ td.neg{color:var(--good)}
     <p>Cambia cualquier valor y ve cuánto tarda la renta en cubrir la mensualidad. Los valores iniciales son solo un ejemplo: pon los de tu caso.</p>
   </header>
 
-  <div class="grid">
+  <noscript><p class="noscript">Este simulador necesita JavaScript para hacer los cálculos. Actívalo en tu navegador para usarlo.</p></noscript>
+
+  <main class="grid">
     <form class="inputs" id="form" novalidate>
       <fieldset>
         <legend>Compra</legend>
-        <div class="field"><label for="precio">Precio del depa</label><div class="inp"><span>$</span><input id="precio" type="number" inputmode="numeric" step="10000" min="0"></div></div>
+        <div class="field"><label for="precio">Precio de la vivienda</label><div class="inp"><span>$</span><input id="precio" type="number" inputmode="numeric" step="10000" min="0"></div></div>
         <div class="field"><label for="eng">Enganche<small id="eng-hint"></small></label><div class="inp"><input id="eng" type="number" inputmode="decimal" step="1" min="0" max="100"><span>%</span></div></div>
         <div class="field"><label for="gastos">Gastos de escrituración<small>Notario, impuesto, avalúo</small></label><div class="inp"><input id="gastos" type="number" inputmode="decimal" step="0.5" min="0"><span>%</span></div></div>
       </fieldset>
@@ -204,7 +208,7 @@ td.neg{color:var(--good)}
         <h2>Los tres caminos con tus mismos abonos</h2>
         <div class="tablebox">
           <table class="compare">
-            <thead><tr><th>Camino</th><th>Se paga sola en</th><th>Terminas de pagar en</th><th>Intereses totales</th><th>De tu bolsa hasta pagarse sola</th><th>Total de tu bolsa hasta liquidar<br><small>con enganche y gastos</small></th></tr></thead>
+            <thead><tr><th scope="col">Camino</th><th scope="col">Se paga sola en</th><th scope="col">Terminas de pagar en</th><th scope="col">Intereses totales</th><th scope="col">De tu bolsa hasta pagarse sola</th><th scope="col">Total de tu bolsa hasta liquidar<br><small>con enganche y gastos</small></th></tr></thead>
             <tbody id="cmp"></tbody>
           </table>
         </div>
@@ -215,7 +219,7 @@ td.neg{color:var(--good)}
         <p class="sub" id="fin-sub"></p>
         <div class="tablebox">
           <table class="compare">
-            <thead><tr><th>Financiamiento</th><th>Mensualidad inicial</th><th>Se paga sola en</th><th>Terminas de pagar en</th><th>Intereses totales</th><th>De tu bolsa hasta pagarse sola</th><th>Total de tu bolsa hasta liquidar<br><small>con enganche y gastos</small></th></tr></thead>
+            <thead><tr><th scope="col">Financiamiento</th><th scope="col">Mensualidad inicial</th><th scope="col">Se paga sola en</th><th scope="col">Terminas de pagar en</th><th scope="col">Intereses totales</th><th scope="col">De tu bolsa hasta pagarse sola</th><th scope="col">Total de tu bolsa hasta liquidar<br><small>con enganche y gastos</small></th></tr></thead>
             <tbody id="cmp-fin"></tbody>
           </table>
         </div>
@@ -232,7 +236,7 @@ td.neg{color:var(--good)}
         <h2>Año por año</h2>
         <div class="tablebox">
           <table>
-            <thead><tr><th>Año</th><th>Mensualidad</th><th class="only-cofi">Infonavit</th><th class="only-cofi">Banco</th><th>A capital / mes</th><th id="th-rent">Renta neta</th><th>De tu bolsa / mes</th><th>Saldo al cierre</th></tr></thead>
+            <thead><tr><th scope="col">Año</th><th scope="col">Mensualidad</th><th scope="col" class="only-cofi">Infonavit</th><th scope="col" class="only-cofi">Banco</th><th scope="col">A capital / mes</th><th scope="col" id="th-rent">Renta neta</th><th scope="col">De tu bolsa / mes</th><th scope="col">Saldo al cierre</th></tr></thead>
             <tbody id="tbody"></tbody>
           </table>
         </div>
@@ -248,7 +252,11 @@ td.neg{color:var(--good)}
         <p><b>Apoyo Infonavit</b>: todo el préstamo es del banco. Tu subcuenta no se usa para la compra: se queda como garantía y, si pierdes tu empleo, el banco cobra de ahí las mensualidades hasta agotarla. La aportación de tu patrón se abona al capital del crédito bancario y aquí se aplica según el camino que elijas. Se aportan cada bimestre; el simulador la reparte por mes. Algunas fuentes mencionan un tope al valor de la vivienda para este esquema; confírmalo con el banco.</p>
       </div>
     </div>
-  </div>
+  </main>
+
+  <footer class="foot">
+    <p>Los resultados son estimaciones; no son asesoría financiera ni una oferta de crédito.</p>
+  </footer>
 </div>
 
 <script>
