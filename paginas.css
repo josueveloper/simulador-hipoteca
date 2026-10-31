@@ -1,0 +1,16 @@
+@font-face{font-family:"Familjen Grotesk";font-style:normal;font-weight:400 700;font-display:swap;src:url(/fonts/familjen-grotesk-latin.woff2) format("woff2")}
+@font-face{font-family:"Figtree";font-style:normal;font-weight:300 900;font-display:swap;src:url(/fonts/figtree-latin.woff2) format("woff2")}
+:root{--bg:#f3f5f2;--panel:#fff;--fg:#17201b;--muted:#5b6760;--line:#d9dfda;--accent:#1f6b4f}
+@media (prefers-color-scheme:dark){:root{--bg:#111613;--panel:#1a211d;--fg:#e7ece8;--muted:#9aa8a0;--line:#2c3630;--accent:#5cc49a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 "Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px 16px 40px}
+main,footer{max-width:720px;margin:0 auto}
+main{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px}
+h1,h2{font-family:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;line-height:1.15}
+h1{font-size:clamp(24px,4vw,32px);margin:0 0 6px;text-wrap:balance}
+h2{font-size:18px;margin:22px 0 4px}
+p,ul{margin:6px 0}
+ul{padding-left:22px}
+a{color:var(--accent)}
+.fecha{color:var(--muted);font-size:13px}
+footer{margin-top:16px;color:var(--muted);font-size:13px}
