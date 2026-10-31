@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Simulador Depa Viande</title>
+<title>Simulador de crédito hipotecario</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -103,8 +103,8 @@ td.neg{color:var(--good)}
 <body>
 <div class="wrap">
   <header>
-    <h1>Simulador Depa Viande</h1>
-    <p>Cambia cualquier valor y ve cuánto tarda la renta en cubrir la mensualidad. Los valores iniciales son el ejemplo que platicamos: Ópalo de 51.48 m² en Tlaquepaque.</p>
+    <h1>Simulador de crédito hipotecario</h1>
+    <p>Cambia cualquier valor y ve cuánto tarda la renta en cubrir la mensualidad. Los valores iniciales son solo un ejemplo: pon los de tu caso.</p>
   </header>
 
   <div class="grid">
@@ -137,7 +137,7 @@ td.neg{color:var(--good)}
             <div class="seg-label">En el crédito del banco, la aportación</div>
             <div class="seg" role="group" aria-label="Cómo se aplica la aportación del patrón">
               <button type="button" id="aport-camino" data-aportmodo="camino">Sigue tu camino<br><small>igual que tus abonos</small></button>
-              <button type="button" id="aport-plazo" data-aportmodo="plazo">Siempre reduce plazo<br><small>como en HSBC</small></button>
+              <button type="button" id="aport-plazo" data-aportmodo="plazo">Siempre reduce plazo<br><small>como en algunos bancos</small></button>
             </div>
             <small class="hint" id="aport-hint"></small>
           </div>
@@ -263,7 +263,7 @@ td.neg{color:var(--good)}
   var KEYS=['precio','eng','gastos','tasa','plazo','renta','aumento','mant','vacios','pago','anual','subcuenta','infMonto','infTasa','infPlazo','aport'];
   var FIN_NAMES={banco:'Solo banco',apoyo:'Apoyo Infonavit',cofinavit:'Cofinavit'};
   var state=Object.assign({},DEFAULTS);
-  try{var saved=JSON.parse(localStorage.getItem('simViande2')||'null');if(saved&&typeof saved==='object'){Object.assign(state,saved);}}catch(e){}
+  try{var saved=JSON.parse(localStorage.getItem('simHipoteca')||'null');if(saved&&typeof saved==='object'){Object.assign(state,saved);}}catch(e){}
 
   var money=new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
   function $(id){return document.getElementById(id);}
@@ -301,7 +301,7 @@ td.neg{color:var(--good)}
     $('meta-neta').setAttribute('aria-pressed',state.meta==='neta');
     $('meta-bruta').setAttribute('aria-pressed',state.meta==='bruta');
   }
-  function save(){try{localStorage.setItem('simViande2',JSON.stringify(state));}catch(e){}}
+  function save(){try{localStorage.setItem('simHipoteca',JSON.stringify(state));}catch(e){}}
 
   function pmtR(B,r,n){if(B<=0)return 0;if(n<=0)return B;return r===0?B/n:B*r/(1-Math.pow(1+r,-n));}
   function simulate(p){
