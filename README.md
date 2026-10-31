@@ -2,7 +2,7 @@
 
 Página estática que calcula la mensualidad de un crédito con banco, Apoyo Infonavit o Cofinavit, compara formas de aplicar abonos a capital y estima cuánto tarda la renta en cubrir la mensualidad. Los cálculos corren en el navegador; no hay servidor ni paso de compilación.
 
-Sitio: <https://hipoteca.josueveloper.com/>
+Sitio: <https://sepagasola.com/>
 
 ## Probarlo en local
 
@@ -18,7 +18,7 @@ GitHub Pages publica la rama `main`, así que cada push a `main` sale directo al
 
 ## Cambiar de dominio
 
-Reemplaza `hipoteca.josueveloper.com` en:
+Reemplaza `sepagasola.com` en:
 
 - `CNAME`
 - `index.html`: `canonical`, Open Graph, Twitter Card y JSON-LD
